@@ -1,4 +1,4 @@
-name: Build and deploy Node.js app to Azure Web App - ecoplantasPrueba
+name: Build and deploy .NET app
 
 on:
   push:
@@ -8,29 +8,33 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js version
-        uses: actions/setup-node@v3
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
         with:
-          node-version: '20.x'
+          dotnet-version: '7.x'  # Ajusta la versión según sea necesario
 
-      - name: npm install, build, and test
-        run: |
-          cd front
-          npm install
-          npm run build --if-present
-          ls -la dist  # Verifica el contenido del directorio de salida
-          npm run test --if-present
+      - name: Restore dependencies
+        run: dotnet restore ./path/to/your/project.csproj
+
+      - name: Build project
+        run: dotnet build ./path/to/your/project.csproj --configuration Release
+
+      - name: Test project
+        run: dotnet test ./path/to/your/project.csproj
+
+      - name: Publish project
+        run: dotnet publish ./path/to/your/project.csproj --configuration Release --output ./publish
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
-          name: node-app
-          path: ./front/dist  # Asegúrate de subir los archivos desde el directorio correcto
+          name: dotnet-app
+          path: ./publish
 
   deploy:
     runs-on: ubuntu-latest
@@ -43,20 +47,14 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v3
         with:
-          name: node-app
+          name: dotnet-app
 
-      - name: List files after artifact download
-        run: |
-          ls -la
-          ls -la ./node-app  # Ajusta el nombre del directorio si es necesario
-
-      - name: 'Deploy to Azure Web App'
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
-        id: deploy-to-webapp
         with:
-          app-name: 'ecoplantasPrueba'
+          app-name: 'your-app-name'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_AC524FB2B85742F89766C7D452CC9D81 }}
-          package: ./node-app  # Asegúrate de que esta ruta sea correcta
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          package: ./dotnet-app
 
 
