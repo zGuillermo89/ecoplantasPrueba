@@ -19,6 +19,8 @@ jobs:
           node-version: '20.x'
 
       - name: npm install, build, and test
+        # NOTA: Usamos 'cd front' para cambiar al directorio correcto en lugar de 'working-directory' 
+        # que no es compatible con PowerShell en Windows.
         run: |
           cd front
           npm install
@@ -26,10 +28,11 @@ jobs:
           npm run test --if-present
 
       - name: Upload artifact for deployment job
+        # NOTA: Ajustamos la ruta del artefacto para reflejar que los archivos se encuentran en el subdirectorio 'front'.
         uses: actions/upload-artifact@v3
         with:
           name: node-app
-          path: ./front  # Asegúrate de subir los archivos desde el directorio correcto
+          path: ./front/build  # Asegúrate de subir los archivos desde el directorio correcto
 
   deploy:
     runs-on: ubuntu-latest
@@ -45,11 +48,12 @@ jobs:
           name: node-app
 
       - name: 'Deploy to Azure Web App'
+        # NOTA: Asegúrate de especificar correctamente el directorio de los paquetes a desplegar desde 'front'.
         uses: azure/webapps-deploy@v2
         id: deploy-to-webapp
         with:
           app-name: 'ecoplantasPrueba'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_AC524FB2B85742F89766C7D452CC9D81 }}
-          package: ./front  # Especifica el paquete desde el directorio correcto
+          package: ./front/build  # Especifica el paquete desde el directorio correcto
 
