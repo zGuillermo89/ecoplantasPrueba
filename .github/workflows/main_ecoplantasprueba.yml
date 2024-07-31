@@ -1,4 +1,4 @@
-name: Build and deploy .NET app
+name: Build and deploy Node.js app to Azure Web App - ecoplantasPrueba
 
 on:
   push:
@@ -8,33 +8,28 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Cambia a ubuntu si tu entorno de construcción es Linux
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v3
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
         with:
-          dotnet-version: '7.x'  # Ajusta la versión según sea necesario
+          node-version: '20.x'
 
-      - name: Restore dependencies
-        run: dotnet restore ./path/to/your/project.csproj
-
-      - name: Build project
-        run: dotnet build ./path/to/your/project.csproj --configuration Release
-
-      - name: Test project
-        run: dotnet test ./path/to/your/project.csproj
-
-      - name: Publish project
-        run: dotnet publish ./path/to/your/project.csproj --configuration Release --output ./publish
+      - name: npm install, build, and test
+        run: |
+          cd front
+          npm install
+          npm run build --if-present
+          npm run test --if-present
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
-          name: dotnet-app
-          path: ./publish
+          name: node-app
+          path: ./front/dist  # Ajusta la ruta del artefacto si es necesario
 
   deploy:
     runs-on: ubuntu-latest
@@ -47,14 +42,18 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v3
         with:
-          name: dotnet-app
+          name: node-app
 
-      - name: Deploy to Azure Web App
+      - name: List files
+        run: |
+          ls -la ./front  # Verifica el contenido del directorio
+
+      - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
+        id: deploy-to-webapp
         with:
-          app-name: 'your-app-name'
+          app-name: 'ecoplantasPrueba'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-          package: ./dotnet-app
-
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_AC524FB2B85742F89766C7D452CC9D81 }}
+          package: ./front/dist  # Ajusta la ruta del paquete si es necesario
 
